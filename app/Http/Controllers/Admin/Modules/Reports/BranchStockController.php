@@ -1,0 +1,301 @@
+<?php
+
+namespace App\Http\Controllers\Admin\Modules\Reports;
+
+use App\Http\Controllers\Controller;
+use App\Models\Branch;
+use App\Models\Stock;
+use App\Models\StockQty;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Yajra\DataTables\DataTables;
+
+class BranchStockController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Http\Response|\Illuminate\View\View
+     */
+    public function index()
+    {
+        $branches = Branch::latest()->get();
+        return view('backend.admin.modules.reports.branch-stock-report', compact('branches'));
+    }
+
+
+    public function getBranchStockReportList(Request $request)
+    {
+        if ($request->ajax()) {
+
+
+            //check zero stock data first so we will eliminate zero stock data
+            $usersQuery = Stock::query();
+            if (!empty($_GET["branch_id"])) {
+                $usersQuery
+                    ->where('status', 'IN STOCK')
+                    ->where('branch_in', $_GET["branch_id"]);
+            } else {
+                $usersQuery
+                    ->where('status', 'IN STOCK');
+            }
+            $data1 = $usersQuery->groupBy('product_id')
+                ->get();
+ 
+            $stocks_id = [];
+            foreach ($data1 as $row) {
+                $stock_qty = StockQty::where('branch_id', $row->branch_in)
+                    ->where('product_id', $row->product_id)
+                    ->first();
+                if (!empty($stock_qty)) {
+                    if ($stock_qty->qty > 0) {
+                        $stocks_id[] = $row->id;
+                    }
+                }
+            }
+            //check zero stock data first so we will eliminate zero stock data
+
+
+            $usersQuery2 = Stock::query();
+            $branch_id = $_GET["branch_id"];
+
+            //if (!empty($_GET["branch_id"])) {
+
+            //  if (!empty($_GET["date_from"]) && !empty($_GET["date_to"]) && !empty($_GET["branch_id"])) {
+            if (!empty($_GET["branch_id"])) {
+                // $date_from = Carbon::parse($_GET["date_from"])->format('Y-m-d 00:00:00');
+                // $date_to = Carbon::parse($_GET["date_to"])->format('Y-m-d 23:59:59');
+
+                $usersQuery2
+                    ->where('status', 'IN STOCK')
+                    ->where('branch_in', $_GET["branch_id"])
+                    //->whereBetween('date', [$date_from, $date_to])
+                    ->whereIn('id', $stocks_id);
+            } else {
+                $usersQuery2
+                    ->where('status', 'IN STOCK')
+                    //->where('branch_in', $_GET["branch_id"])
+                    ->whereIn('id', $stocks_id);
+            }
+            $data = $usersQuery2->groupBy('product_id')->latest()->get();
+
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->addColumn('brand_name', function ($row) {
+                    return $row->product->brand->brand_name;
+                })
+                ->addColumn('product_name', function ($row) {
+                    return $row->product->product_name;
+                })
+                ->addColumn('product_code', function ($row) {
+                    return $row->product->product_code;
+                })
+                ->addColumn('category', function ($row) {
+                    return $row->product->category->category_name;
+                })
+                ->addColumn('color', function ($row) {
+                    return $row->product->color_code;
+                })
+                ->addColumn('size', function ($row) {
+                    return $row->product->size;
+                })
+                ->addColumn('opening_qty', function ($row) use ($branch_id) {
+
+                    if (!empty($branch_id)) {
+                        $product_id = $row->product_id;
+                        $stock_qty = StockQty::where('branch_id', $branch_id)->where('product_id', $product_id)->first();
+                        if (!empty($stock_qty)) {
+
+                            $product_starting_date = Carbon::parse($stock_qty->created_at)->startOfDay();
+                            $product_previous_day = Carbon::now()->subDays('1')->endOfDay();
+
+
+                            $stock_qty = StockQty::where('branch_id', $branch_id)->where('product_id', $product_id)
+                                ->whereBetween('created_at', [$product_starting_date, $product_previous_day])
+                                ->get();
+                            $stock_qty = $stock_qty->sum('qty');
+                            return $stock_qty;
+                        }
+                    } else {
+                        $product_id = $row->product_id;
+                        $stock_qty = StockQty::where('product_id', $product_id)->first();
+                        if (!empty($stock_qty)) {
+
+                            $product_starting_date = Carbon::parse($stock_qty->created_at)->startOfDay();
+                            $product_previous_day = Carbon::now()->subDays('1')->endOfDay();
+
+
+                            $stock_qty = StockQty::where('product_id', $product_id)
+                                ->whereBetween('created_at', [$product_starting_date, $product_previous_day])
+                                ->get();
+                            $stock_qty = $stock_qty->sum('qty');
+                            return $stock_qty;
+                        } else {
+                            return "";
+                        }
+                    }
+                })
+                ->addColumn('closing_qty', function ($row) use ($branch_id) {
+                    $product_id = $row->product_id;
+                    $stock_qty = StockQty::where('branch_id', $branch_id)->where('product_id', $product_id)->first();
+                    if (!empty($stock_qty)) {
+                        $stock_qty = $stock_qty->qty;
+                        return $stock_qty;
+                    } else {
+                        return 0;
+                    }
+                })
+                ->make(true);
+        }
+    }
+
+
+
+
+    //
+    //    public function getBranchStockReportList(Request $request)
+    //    {
+    //        if ($request->ajax()) {
+    //
+    //
+    //            $usersQuery = Stock::query();
+    //            $branch_id = $_GET["branch_id"];
+    //
+    //            //if (!empty($_GET["branch_id"])) {
+    //
+    //            if (!empty($_GET["date_from"]) && !empty($_GET["date_to"]) && !empty($_GET["branch_id"])) {
+    //                $date_from = Carbon::parse($_GET["date_from"])->format('Y-m-d 00:00:00');
+    //                $date_to = Carbon::parse($_GET["date_to"])->format('Y-m-d 23:59:59');
+    //
+    //                $usersQuery
+    //                    ->where('status', 'IN STOCK')
+    //                    ->where('branch_in', $_GET["branch_id"])
+    //                    ->whereBetween('date', [$date_from, $date_to]);
+    //            } else {
+    //                $usersQuery
+    //                    ->where('status', 'IN STOCK')
+    //                    ->where('branch_in', $_GET["branch_id"]);
+    //            }
+    //            $data = $usersQuery->groupBy('product_id')->latest()->get();
+    //
+    //            return Datatables::of($data)
+    //                ->addIndexColumn()
+    //                ->addColumn('brand_name', function ($row) {
+    //                    return $row->product->brand->brand_name;
+    //                })
+    //                ->addColumn('product_name', function ($row) {
+    //                    return $row->product->product_name;
+    //                })
+    //                ->addColumn('product_code', function ($row) {
+    //                    return $row->product->product_code;
+    //                })
+    //                ->addColumn('category', function ($row) {
+    //                    return $row->product->category->category_name;
+    //                })
+    //                ->addColumn('color', function ($row) {
+    //                    return $row->product->color_code;
+    //                })
+    //                ->addColumn('size', function ($row) {
+    //                    return $row->product->size;
+    //                })
+    //                ->addColumn('opening_qty', function ($row) use ($branch_id) {
+    //                    $product_id = $row->product_id;
+    //                    $stock_qty = StockQty::where('branch_id', $branch_id)->where('product_id', $product_id)->first();
+    //                    if (!empty($stock_qty)) {
+    //
+    //                        $product_starting_date = Carbon::parse($stock_qty->created_at)->startOfDay();
+    //                        $product_previous_day = Carbon::now()->subDays('1')->endOfDay();
+    //
+    //
+    //                        $stock_qty = StockQty::where('branch_id', $branch_id)->where('product_id', $product_id)
+    //                            ->whereBetween('created_at', [$product_starting_date, $product_previous_day])
+    //                            ->get();
+    //                        $stock_qty = $stock_qty->sum('qty');
+    //                        return $stock_qty;
+    //                    } else {
+    //                        return 0;
+    //                    }
+    //                })
+    //                ->addColumn('closing_qty', function ($row) use ($branch_id) {
+    //                    $product_id = $row->product_id;
+    //                    $stock_qty = StockQty::where('branch_id', $branch_id)->where('product_id', $product_id)->first();
+    //                    if (!empty($stock_qty)) {
+    //                        $stock_qty = $stock_qty->qty;
+    //                        return $stock_qty;
+    //                    } else {
+    //                        return 0;
+    //                    }
+    //                })
+    //                ->make(true);
+    //        }
+    //    }
+    //
+    //
+
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        //
+    }
+}

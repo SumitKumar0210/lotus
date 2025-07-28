@@ -281,7 +281,7 @@ class SaleController extends Controller
                     return $row->estimate_no;
                 })
                 ->addColumn('branch_name', function ($row) {
-                    return $row->user?->branch?->branch_name ?? '';
+                    return optional($row->user?->branch)->branch_name ?? '';
                 })
 
 
@@ -395,6 +395,41 @@ class SaleController extends Controller
                     'total_discount_percent' => $total_discount_percent,
                     'total_cancelled_bill' => $total_cancelled_bill,
                 ])
+                ->filterColumn('estimate_status', function ($query, $keyword) {
+                    $query->where('estimate_status', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('delivery_status', function ($query, $keyword) {
+                    $query->where('delivery_status', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('client_name_and_mobile', function ($query, $keyword) {
+                    $query->where(function ($q) use ($keyword) {
+                        $q->where('client_name', 'like', "%{$keyword}%")
+                          ->orWhere('client_mobile', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('estimate_no', function ($query, $keyword) {
+                    $query->where('estimate_no', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('branch_name', function ($query, $keyword) {
+                    $query->whereHas('user.branch', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('date', function ($query, $keyword) {
+                    $date = date('Y-m-d', strtotime($keyword)); 
+                    if ($date && strtotime($keyword)) {
+                        $query->whereDate('updated_at', $date);
+                    }
+                })
+                ->filterColumn('discount', function ($query, $keyword) {
+                    $query->where('discount_value', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('grand_total', function ($query, $keyword) {
+                    $query->where('grand_total', 'like', "%{$keyword}%");
+                })
+                // ->filterColumn('dues_amount', function ($query, $keyword) {
+                //     $query->where('dues_amount', 'like', "%{$keyword}%");
+                // })
                 ->make(true);
         }
     }

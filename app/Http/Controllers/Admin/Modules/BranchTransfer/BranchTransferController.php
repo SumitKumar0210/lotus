@@ -73,6 +73,43 @@ class BranchTransferController extends Controller
                 ->addColumn('created_at', function ($row) {
                     return Carbon::parse($row->created_at)->format('d-F-Y') ?? '';
                 })
+                ->filterColumn('created_at', function ($query, $keyword) {
+                    $query->whereDate('created_at', date('Y-m-d', strtotime($keyword)));
+                })
+                ->filterColumn('from', function ($query, $keyword) {
+                    $query->whereHas('fromTwo', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('to', function ($query, $keyword) {
+                    $query->whereHas('branchTo', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('branch_transfer_no', function ($query, $keyword) {
+                    $query->where('transfer_no', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('product_name', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('product_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('model_no', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('product_code', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('created_by', function ($query, $keyword) {
+                    $query->whereHas('branchReturnUser', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('accepted_by', function ($query, $keyword) {
+                    $query->whereHas('branchUserOut', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                
                 ->make(true);
         }
     }

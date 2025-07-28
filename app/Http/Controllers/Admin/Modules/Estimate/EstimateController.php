@@ -30,7 +30,7 @@ class EstimateController extends Controller
     public function getEstimateList(Request $request)
     {
         if ($request->ajax()) {
-           
+         
             $data = Estimate::with('EstimateProductLists', 'EstimatePaymentLists','user.branch:id,branch_name')
                 ->where('estimate_status', '!=', 'ESTIMATE CANCELLED')
                 ->latest();
@@ -38,9 +38,11 @@ class EstimateController extends Controller
             return DataTables::eloquent($data)
                 ->addIndexColumn()
                 ->addColumn('branch_name', function ($row) {
+                    
                     return optional($row->user->branch)->branch_name;
                 })
                 ->addColumn('total_paid', function ($row) {
+                    
                     return $row->EstimatePaymentLists->sum('total_paid');
                 })
                 ->addColumn('discount_per', function ($row) {
@@ -104,6 +106,40 @@ class EstimateController extends Controller
                         }
                     }
                 })
+                ->filterColumn('branch_name', function ($query, $keyword) {
+                    $query->whereHas('user.branch', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('created_by', function ($query, $keyword) {
+                    $query->whereHas('user', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('estimate_no', function ($query, $keyword) {
+                    $query->where('estimate_no', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('client_mobile', function ($query, $keyword) {
+                    $query->where('client_mobile', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('client_name', function ($query, $keyword) {
+                    $query->where('client_name', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('discount_value', function ($query, $keyword) {
+                    $query->where('discount_value', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('delivery_status', function ($query, $keyword) {
+                    $query->where('delivery_status', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('dues_amount', function ($query, $keyword) {
+                    $query->where('dues_amount', 'like', "%{$keyword}%");
+                })
+                // ->filterColumn('total_paid', function ($query, $keyword) {
+                //     $query->whereHas('EstimatePaymentLists', function ($q) use ($keyword) {
+                //         $q->where('total_paid', 'like', "%{$keyword}%");
+                //     });
+                // })
+
                 ->rawColumns(['action'])
                 ->make(true);
         }

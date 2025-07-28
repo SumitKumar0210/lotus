@@ -102,10 +102,17 @@ class DashboardController extends Controller
 
         if ($request->ajax()) {
 
-            $date = Carbon::now('-3 months');
+            // $date = Carbon::now('-3 months');
+            // $firstOfQuarter = $date->firstOfQuarter();
+
+            // $date2 = Carbon::now('-3 months');
+            // $lastOfQuarter = $date2->lastOfQuarter();
+
+
+            $date = Carbon::now()->subMonths(3);
             $firstOfQuarter = $date->firstOfQuarter();
 
-            $date2 = Carbon::now('-3 months');
+            $date2 = Carbon::now()->subMonths(3);
             $lastOfQuarter = $date2->lastOfQuarter();
 
             $data = Estimate::where('payment_status', 'PAYMENT DONE')

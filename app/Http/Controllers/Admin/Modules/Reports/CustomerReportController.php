@@ -81,6 +81,27 @@ class CustomerReportController extends Controller
                     return $sum_due;
                 })
                 ->rawColumns(['estimate_no', 'estimate_amount'])
+                // ->filterColumn('estimate_no', function ($query, $keyword) {
+                //     $query->whereHas('EstimateProductLists', function ($q) use ($keyword) {
+                //         $q->where('estimate_no', 'like', "%{$keyword}%");
+                //     });
+                // })
+                // ->filterColumn('estimate_amount', function ($query, $keyword) {
+                //     $query->whereHas('EstimateProductLists', function ($q) use ($keyword) {
+                //         $q->where('grand_total', 'like', "%{$keyword}%");
+                //     });
+                // })
+               
+                // ->filterColumn('total_paid', function ($query, $keyword) {
+                //     $query->whereHas('EstimatePaymentLists', function ($q) use ($keyword) {
+                //         $q->where('total_paid', 'like', "%{$keyword}%");
+                //     });
+                // })
+                // ->filterColumn('dues', function ($query, $keyword) {
+                //     $query->whereHas('EstimatePaymentLists', function ($q) use ($keyword) {
+                //         $q->where('dues_amount', 'like', "%{$keyword}%");
+                //     });
+                // })
                 ->make(true);
         }
     }

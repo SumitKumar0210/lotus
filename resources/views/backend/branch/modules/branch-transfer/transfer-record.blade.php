@@ -86,7 +86,9 @@
                 ajax: "{{ route('branch.branchTransfer.getTransferRecordList') }}",
                 columns: [{
                         data: 'DT_RowIndex',
-                        name: 'DT_RowIndex'
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false
                     },
                     {
                         data: 'from',

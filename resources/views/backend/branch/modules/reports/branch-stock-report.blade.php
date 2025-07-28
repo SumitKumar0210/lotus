@@ -145,7 +145,9 @@
                 },
                 columns: [{
                         data: 'DT_RowIndex',
-                        name: 'DT_RowIndex'
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false
                     },
                     {
                         data: 'category',
@@ -174,7 +176,9 @@
                     // },
                     {
                         data: 'opening_qty',
-                        name: 'opening_quantity'
+                        name: 'opening_quantity',
+                        searchable: false,
+                        orderable: false
                     },
                     // {
                     //     data: 'closing_qty',

@@ -11,7 +11,7 @@ use App\Models\StockQty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class DeliveredListController extends Controller
 {
@@ -29,7 +29,6 @@ class DeliveredListController extends Controller
     public function getDeliveredList(Request $request)
     {
         if ($request->ajax()) {
-
             $branch_id = Auth::user()->branch_id;
             $estimate_ids = Estimate::where('branch_id', $branch_id)->pluck('id');
             $estimate_product_list_ids = EstimateProductList::whereIn('estimate_id', $estimate_ids)->pluck('id');
@@ -37,19 +36,19 @@ class DeliveredListController extends Controller
             $data = EstimateProductDeliveryStatus::with('ProductList')
                 ->whereIn('estimate_product_list_id', $estimate_product_list_ids)
                 ->where('delivery_status', 'ITEM DELIVERED')
-                ->latest()
-                ->get();
+                ->latest();
+                // ->get();
 
-            return Datatables::of($data)
+            return DataTables::eloquent($data)
                 ->addIndexColumn()
                 ->addColumn('estimate_no', function ($row) {
-                    return $row->ProductList->Estimate->estimate_no;
+                    return optional($row->ProductList->Estimate)->estimate_no ?? '';
                 })
                 ->addColumn('branch_name', function ($row) {
-                    return $row->ProductList->Estimate->user->branch->branch_name;
+                    return optional($row->ProductList->Estimate->user->branch)->branch_name ?? '';
                 })
                 ->addColumn('customer_details', function ($row) {
-                    return $row->ProductList->Estimate->client_name . ' ' . $row->ProductList->Estimate->client_mobile . ' ' . $row->ProductList->Estimate->client_address;
+                    return optional($row->ProductList->Estimate)->client_name . ' ' . optional($row->ProductList->Estimate)->client_mobile . ' ' . optional($row->ProductList->Estimate)->client_address;
                 })
                 //                ->addColumn('client_mobile', function ($row) {
                 //                    return $row->ProductList->Estimate->client_mobile;
@@ -61,25 +60,25 @@ class DeliveredListController extends Controller
                     return $row->date_time;
                 })
                 ->addColumn('product_name', function ($row) {
-                    return $row->ProductList->product_name;
+                    return optional($row->ProductList)->product_name ?? '';
                 })
                 ->addColumn('product_code', function ($row) {
-                    return $row->ProductList->product_code . '<br>' . $row->ProductList->color . '<br>' . $row->ProductList->size;
+                    return optional($row->ProductList)->product_code . '<br>' . optional($row->ProductList)->color . '<br>' . optional($row->ProductList)->size;
                 })
                 ->addColumn('quantity', function ($row) {
                     return $row->qty;
                 })
                 ->addColumn('remarks', function ($row) {
-                    return $row->ProductList->Estimate->remarks;
+                    return optional($row->ProductList->Estimate)->remarks ?? '';
                 })
                 ->addColumn('product_type', function ($row) {
-                    return $row->ProductList->product_type;
+                    return optional($row->ProductList)->product_type ?? '';
                 })
                 ->addColumn('created_by', function ($row) {
-                    return $row->ProductList->Estimate->user->name ?? '';
+                    return optional($row->ProductList->Estimate->user)->name ?? '';
                 })
                 ->addColumn('delivered_by', function ($row) {
-                    return $row->user->name;
+                    return optional($row->user)->name ?? '';
                 })
                 ->addColumn('action', function ($row) {
                     
@@ -108,6 +107,62 @@ class DeliveredListController extends Controller
                     return '<input type="checkbox" data-id="' . $row->id . '" data-estimate_numbers="' . $row->ProductList->Estimate->estimate_no . '"  name="someCheckbox[]" class="someCheckbox" />';
                 })
                 ->rawColumns(['action', 'checkbox', 'product_code'])
+                ->filterColumn('estimate_no', function ($query, $keyword) {
+                    $query->whereHas('ProductList.Estimate', function ($q) use ($keyword) {
+                        $q->where('estimate_no', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('branch_name', function ($query, $keyword) {
+                    $query->whereHas('ProductList.Estimate.user.branch', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('customer_details', function ($query, $keyword) {
+                    $query->whereHas('ProductList.Estimate', function ($q) use ($keyword) {
+                        $q->where(function ($query) use ($keyword) {
+                            $query->where('client_name', 'like', "%{$keyword}%")    
+                                ->orWhere('client_mobile', 'like', "%{$keyword}%")
+                                ->orWhere('client_address', 'like', "%{$keyword}%");
+                        });
+                    });
+                })
+                ->filterColumn('product_name', function ($query, $keyword) {
+                    $query->whereHas('ProductList', function ($q) use ($keyword) {
+                        $q->where('product_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('product_code', function ($query, $keyword) {
+                    $query->whereHas('ProductList', function ($q) use ($keyword) {
+                        $q->where(function ($query) use ($keyword) {
+                            $query->where('product_code', 'like', "%{$keyword}%")
+                                ->orWhere('color', 'like', "%{$keyword}%")
+                                ->orWhere('size', 'like', "%{$keyword}%");
+                        });
+                    });
+                })
+                ->filterColumn('product_type', function ($query, $keyword) {
+                    $query->whereHas('ProductList', function ($q) use ($keyword) {
+                        $q->where('product_type', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('created_by', function ($query, $keyword) {
+                    $query->whereHas('ProductList.Estimate.user', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('delivered_by', function ($query, $keyword) {
+                    $query->whereHas('user', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('remarks', function ($query, $keyword) {
+                    $query->whereHas('ProductList.Estimate', function ($q) use ($keyword) {
+                        $q->where('remarks', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('delivery_date', function ($query, $keyword) {
+                    $query->where('date_time', 'like', "%{$keyword}%");
+                })
                 ->make(true);
         }
     }

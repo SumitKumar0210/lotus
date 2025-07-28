@@ -118,7 +118,9 @@ Consolidate Report
                 columns: [
                     {
                         data: 'DT_RowIndex',
-                        name: 'DT_RowIndex'
+                        name: 'DT_RowIndex',
+                        searchable: false,
+                        orderable: false
                     },
                     {
                         data: 'brand_name',
@@ -146,7 +148,9 @@ Consolidate Report
                     },
                     {
                         data: 'qty',
-                        name: 'qty'
+                        name: 'qty',
+                        searchable: false,
+                        orderable: false
                     },
 
                 ],

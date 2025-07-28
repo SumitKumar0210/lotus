@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Estimate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class CancelledEstimateController extends Controller
 {
@@ -24,15 +24,15 @@ class CancelledEstimateController extends Controller
     public function getEstimateListCancelled(Request $request)
     {
         if ($request->ajax()) {
-            $data = Estimate::with('EstimateProductLists', 'EstimatePaymentLists')
+            $data = Estimate::with('EstimateProductLists', 'EstimatePaymentLists', 'user.branch:id,branch_name')
                 ->where('branch_id', Auth::user()->branch->id)
                 ->where('estimate_status', '=', 'ESTIMATE CANCELLED')
-                ->latest()
-                ->get();
-            return Datatables::of($data)
+                ->latest();
+                // ->get();
+            return DataTables::eloquent($data)
                 ->addIndexColumn()
                 ->addColumn('branch_name', function ($row) {
-                    return $row->user->branch->branch_name;
+                    return optional($row->user->branch)->branch_name ?? '';
                 })
                 ->addColumn('product_name', function ($row) {
                     $options = '<ul>';
@@ -85,6 +85,12 @@ class CancelledEstimateController extends Controller
 
                 })
                 ->rawColumns(['product_name', 'product_code', 'color', 'size', 'quantity', 'action'])
+                ->filterColumn('branch_name', function ($query, $keyword) {
+                    $query->whereHas('user.branch', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+               
                 ->make(true);
         }
     }

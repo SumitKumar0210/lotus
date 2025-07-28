@@ -9,7 +9,7 @@ use App\Models\EstimateProductList;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class SaleController extends Controller
 {
@@ -126,9 +126,10 @@ class SaleController extends Controller
                 $usersQuery2->whereBetween('updated_at', [$date_from, $date_to]);
             }
 
-            $data = $usersQuery2->latest()->get();
+            $data = $usersQuery2->latest();
+            // ->get();
 
-            return Datatables::of($data)
+            return DataTables::eloquent($data)
 
 
                 ->addIndexColumn()
@@ -136,7 +137,7 @@ class SaleController extends Controller
                     return $row->estimate_no;
                 })
                 ->addColumn('branch_name', function ($row) {
-                    return $row->user->branch->branch_name;
+                    return optional($row->user->branch)->branch_name ?? '';
                 })
                 ->addColumn('date', function ($row) {
                     return Carbon::parse($row->updated_at)->format('m-d-Y');
@@ -215,6 +216,58 @@ class SaleController extends Controller
                         </nav>';
                 })
                 ->rawColumns(['action', 'product', 'mrp', 'amount','qty'])
+
+                ->filterColumn('estimate_no', function ($query, $keyword) {
+                    $query->where('estimate_no', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('date', function ($query, $keyword) {
+                    $formatted = Carbon::createFromFormat('m-d-Y', $keyword)->format('Y-m-d');
+                    $query->whereDate('updated_at', $formatted);
+                })
+                ->filterColumn('branch_name', function ($query, $keyword) {
+                    $query->whereHas('branch', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('client_name_and_mobile', function ($query, $keyword) {
+                    $query->where(function ($q) use ($keyword) {
+                        $q->where('client_name', 'like', "%{$keyword}%")
+                            ->orWhere('client_mobile', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('discount', function ($query, $keyword) {
+                    $query->where('discount_value', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('grand_total', function ($query, $keyword) {
+                    $query->where('grand_total', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('dues_amount', function ($query, $keyword) {
+                    $query->where('dues_amount', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('product', function ($query, $keyword) {
+                    $query->whereHas('EstimateProductLists', function ($q) use ($keyword) {
+                        $q->where('product_code', 'like', "%{$keyword}%")
+                            ->orWhereHas('Product', function ($qq) use ($keyword) {
+                                $qq->where('product_name', 'like', "%{$keyword}%");
+                            });
+                    });
+                })
+                ->filterColumn('qty', function ($query, $keyword) {
+                    $query->whereHas('EstimateProductLists', function ($q) use ($keyword) {
+                        $q->where('qty', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('mrp', function ($query, $keyword) {
+                    $query->whereHas('EstimateProductLists', function ($q) use ($keyword) {
+                        $q->where('mrp', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('amount', function ($query, $keyword) {
+                    $query->whereHas('EstimateProductLists', function ($q) use ($keyword) {
+                        $q->where('amount', 'like', "%{$keyword}%");
+                    });
+                })
+
                 ->make(true);
         }
     }

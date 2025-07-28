@@ -9,7 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class DuesEstimateListController extends Controller
 {
@@ -27,17 +27,17 @@ class DuesEstimateListController extends Controller
     public function getDuesEstimateList(Request $request)
     {
         if ($request->ajax()) {
-            $data = Estimate::with('EstimateProductLists', 'EstimatePaymentLists')
+            $data = Estimate::with('EstimateProductLists', 'EstimatePaymentLists', 'user.branch:id,branch_name')
                 ->where('payment_status', 'PAYMENT DUE')
                 ->where('branch_id', Auth::user()->branch->id)
                 ->where('estimate_status', '!=', 'ESTIMATE CANCELLED')
                 //->where('delivery_status_order_to_make', 'NOT DELIVERED')
-                ->latest()
-                ->get();
-            return Datatables::of($data)
+                ->latest();
+                // ->get();
+            return Datatables::eloquent($data)
                 ->addIndexColumn()
                 ->addColumn('branch_name', function ($row) {
-                    return $row->user->branch->branch_name;
+                    return optional($row->user->branch)->branch_name;
                 })
                 ->addColumn('action', function ($row) {
 
@@ -70,6 +70,12 @@ class DuesEstimateListController extends Controller
                     }
                 })
                 ->rawColumns(['action'])
+                ->filterColumn('branch_name', function ($query, $keyword) {
+                    $query->whereHas('user.branch', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                
                 ->make(true);
         }
     }

@@ -10,7 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class ConsolidatedController extends Controller
 {
@@ -30,88 +30,149 @@ class ConsolidatedController extends Controller
         if ($request->ajax()) {
 
             //check zero stock data first so we will eliminate zero stock data
-            $usersQuery = Stock::query();
-            if (!empty($_GET["product_id"])) {
-                $usersQuery
-                    ->where('reason', 'PURCHASE')
-                    ->where('product_id', $_GET["product_id"]);
-            } else {
-                $usersQuery
-                    ->where('reason', 'PURCHASE');
-            }
-            $data1 = $usersQuery->latest()
-                ->groupBy('product_id')
-                ->get();
+            // $usersQuery = Stock::query();
+            // if (!empty($_GET["product_id"])) {
+            //     $usersQuery
+            //         ->where('reason', 'PURCHASE')
+            //         ->where('product_id', $_GET["product_id"]);
+            // } else {
+            //     $usersQuery
+            //         ->where('reason', 'PURCHASE');
+            // }
+            // $data1 = $usersQuery->latest()
+            //     ->groupBy('product_id')
+            //     ->get();
+            // $branch_id = Auth::user()->branch_id;
+
+            // $stocks_id = [];
+            // foreach ($data1 as $row) {
+            //     $stock_qty = StockQty::where('branch_id', $branch_id)
+            //         ->where('product_id', $row->product_id)
+            //         ->first();
+            //     if (!empty($stock_qty)) {
+            //         if ($stock_qty->qty > 0) {
+            //             $stocks_id[] = $row->id;
+            //         }
+            //     }
+            // }
+            // //check zero stock data first so we will eliminate zero stock data
+
+
+            // $usersQuery2 = Stock::query();
+            // if (!empty($_GET["product_id"])) {
+            //     $usersQuery2
+            //         ->where('reason', 'PURCHASE')
+            //         ->where('product_id', $_GET["product_id"])
+            //         ->whereIn('id', $stocks_id)
+            //         ->latest();
+            // } else {
+            //     $usersQuery2
+            //         ->where('reason', 'PURCHASE')
+            //         ->whereIn('id', $stocks_id)
+            //         ->latest();
+            // }
+            // $data2 = $usersQuery2->groupBy('product_id');
+            // ->get();
+
             $branch_id = Auth::user()->branch_id;
+            $product_id = request()->get('product_id');
 
-            $stocks_id = [];
-            foreach ($data1 as $row) {
-                $stock_qty = StockQty::where('branch_id', $branch_id)
-                    ->where('product_id', $row->product_id)
-                    ->first();
-                if (!empty($stock_qty)) {
-                    if ($stock_qty->qty > 0) {
-                        $stocks_id[] = $row->id;
-                    }
-                }
-            }
-            //check zero stock data first so we will eliminate zero stock data
+            // One query with subquery filter to only include products with positive stock
+            $usersQuery = Stock::query()
+                ->with(['product.brand', 'product.category'])
+                ->where('reason', 'PURCHASE')
+                ->when($product_id, function ($q) use ($product_id) {
+                    $q->where('product_id', $product_id);
+                })
+                ->whereIn('product_id', function ($q) use ($branch_id) {
+                    $q->select('product_id')
+                        ->from('stock_qties')
+                        ->where('branch_id', $branch_id)
+                        ->where('qty', '>', 0);
+                })
+                ->groupBy('product_id')
+                ->latest();
 
-
-            $usersQuery2 = Stock::query();
-            if (!empty($_GET["product_id"])) {
-                $usersQuery2
-                    ->where('reason', 'PURCHASE')
-                    ->where('product_id', $_GET["product_id"])
-                    ->whereIn('id', $stocks_id)
-                    ->latest();
-            } else {
-                $usersQuery2
-                    ->where('reason', 'PURCHASE')
-                    ->whereIn('id', $stocks_id)
-                    ->latest();
-            }
-            $data2 = $usersQuery2->groupBy('product_id')->get();
-
-            return Datatables::of($data2)
+            return Datatables::eloquent($usersQuery)
                 ->addIndexColumn()
                 ->addColumn('product_name', function ($row) {
-                    return $row->product->product_name;
+                    return optional($row->product)->product_name;
                 })
                 ->addColumn('brand_name', function ($row) {
-                    return $row->product->brand->brand_name;
+                    return optional($row->product->brand)->brand_name;
                 })
                 ->addColumn('product_code', function ($row) {
-                    return $row->product->product_code;
+                    return optional($row->product)->product_code;
                 })
                 ->addColumn('category', function ($row) {
-                    return $row->product->category->category_name;
+                    return optional($row->product->category)->category_name;
                 })
                 ->addColumn('color', function ($row) {
-                    return $row->product->color_code;
+                    return optional($row->product)->color_code;
                 })
                 ->addColumn('size', function ($row) {
-                    return $row->product->size;
+                    return optional($row->product)->size;
                 })
-                ->addColumn('qty', function ($row) {
+                // ->addColumn('qty', function ($row) {
 
-                    $product_id = $row->product_id;
-                    $branch_id = Auth::user()->branch_id;
+                //     $product_id = $row->product_id;
+                //     $branch_id = Auth::user()->branch_id;
+                //     $stock_qty = StockQty::where('branch_id', $branch_id)
+                //         ->where('product_id', $product_id)
+                //         ->first();
+
+                //     if (!empty($stock_qty)) {
+                //         return $stock_qty->qty;
+                //     } else {
+                //         return 0;
+                //     }
+                // })
+                ->addColumn('qty', function ($row) use ($branch_id) {
                     $stock_qty = StockQty::where('branch_id', $branch_id)
-                        ->where('product_id', $product_id)
+                        ->where('product_id', $row->product_id)
                         ->first();
 
-                    if (!empty($stock_qty)) {
-                        return $stock_qty->qty;
-                    } else {
-                        return 0;
-                    }
+                    return $stock_qty ? $stock_qty->qty : 0;
                 })
                 ->addColumn('created_at', function ($row) {
                     return Carbon::parse($row->created_at)->format('d-F-Y');
                 })
+                ->filterColumn('product_name', function ($query, $keyword) {
+                        $query->whereHas('product', function ($q) use ($keyword) {
+                            $q->where('product_name', 'like', "%$keyword%");
+                        });
+                    })
+                    ->filterColumn('brand_name', function ($query, $keyword) {
+                        $query->whereHas('product.brand', function ($q) use ($keyword) {
+                            $q->where('brand_name', 'like', "%$keyword%");
+                        });
+                    })
+                    ->filterColumn('product_code', function ($query, $keyword) {
+                        $query->whereHas('product', function ($q) use ($keyword) {
+                            $q->where('product_code', 'like', "%$keyword%");
+                        });
+                    })
+                    ->filterColumn('category', function ($query, $keyword) {
+                        $query->whereHas('product.category', function ($q) use ($keyword) {
+                            $q->where('category_name', 'like', "%$keyword%");
+                        });
+                    })
+                    ->filterColumn('color', function ($query, $keyword) {
+                        $query->whereHas('product', function ($q) use ($keyword) {
+                            $q->where('color_code', 'like', "%$keyword%");
+                        });
+                    })
+                    ->filterColumn('size', function ($query, $keyword) {
+                        $query->whereHas('product', function ($q) use ($keyword) {
+                            $q->where('size', 'like', "%$keyword%");
+                        });
+                    })
+                    ->filterColumn('created_at', function ($query, $keyword) {
+                        $query->whereDate('created_at', date('Y-m-d', strtotime($keyword)));
+                    })
                 ->make(true);
-        }
+                }
+
     }
 
 

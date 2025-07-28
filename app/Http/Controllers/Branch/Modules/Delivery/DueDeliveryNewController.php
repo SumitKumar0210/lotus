@@ -10,7 +10,7 @@ use App\Models\StockQty;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 use App\Models\Branch;
 use App\Models\Product;
@@ -53,16 +53,16 @@ class DueDeliveryNewController extends Controller
 
             $merged_estimate_ids_one_estimate_ids_two = array_merge($estimate_ids_one, $estimate_ids_two);
             $estimate = Estimate::whereIn('id', $merged_estimate_ids_one_estimate_ids_two)
-                ->latest()
-                ->get();
+                ->latest();
+                // ->get();
 
-            return Datatables::of($estimate)
+            return DataTables::eloquent($estimate)
                 ->addIndexColumn()
                 ->addColumn('estimate_no', function ($row) {
                     return $row->estimate_no;
                 })
                 ->addColumn('branch_name', function ($row) {
-                    return $row->user->branch->branch_name;
+                    return optional($row->user->branch)->branch_name;
                 })
                 ->addColumn('client_name', function ($row) {
                     return $row->client_name . ',<br>' . $row->client_mobile . ',<br>' . $row->client_address;
@@ -82,6 +82,25 @@ class DueDeliveryNewController extends Controller
                         </nav>';
                 })
                 ->rawColumns(['action', 'client_name'])
+                ->filterColumn('branch_name', function ($query, $keyword) {
+                    $query->whereHas('user.branch', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('client_name', function ($query, $keyword) {
+                    $query->where(function ($q) use ($keyword) {
+                        $q->where('client_name', 'like', "%{$keyword}%")
+                            ->orWhere('client_mobile', 'like', "%{$keyword}%")
+                            ->orWhere('client_address', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('expected_delivery_date', function ($query, $keyword) {
+                    $query->where('expected_delivery_date', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('estimate_no', function ($query, $keyword) {
+                    $query->where('estimate_no', 'like', "%{$keyword}%");
+                })
+                
                 ->make(true);
         }
     }

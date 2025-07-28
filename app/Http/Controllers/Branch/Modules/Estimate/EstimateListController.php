@@ -14,7 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class EstimateListController extends Controller
 {
@@ -32,15 +32,15 @@ class EstimateListController extends Controller
     public function getEstimateList(Request $request)
     {
         if ($request->ajax()) {
-            $data = Estimate::with('EstimateProductLists', 'EstimatePaymentLists')
+            $data = Estimate::with('EstimateProductLists', 'EstimatePaymentLists', 'user.branch:id,branch_name')
                 ->where('branch_id', Auth::user()->branch->id)
                 ->where('estimate_status', '!=', 'ESTIMATE CANCELLED')
-                ->latest()
-                ->get();
-            return Datatables::of($data)
+                ->latest();
+                // ->get();
+            return DataTables::eloquent($data)
                 ->addIndexColumn()
                 ->addColumn('branch_name', function ($row) {
-                    return $row->user->branch->branch_name;
+                    return optional($row->user->branch)->branch_name;
                 })
                 ->addColumn('product_name', function ($row) {
                     $options = '<ul>';
@@ -122,6 +122,26 @@ class EstimateListController extends Controller
                     }
                 })
                 ->rawColumns(['product_name', 'product_code', 'color', 'size', 'quantity', 'action'])
+                // ->filterColumn('product_name', function ($query, $keyword) {
+                //     $query->whereHas('EstimateProductLists', function ($q) use ($keyword) {
+                //         $q->where('product_name', 'like', "%{$keyword}%");
+                //     });
+                // })
+                // ->filterColumn('product_code', function ($query, $keyword) {
+                //     $query->whereHas('EstimateProductLists', function ($q) use ($keyword) {
+                //         $q->where('product_code', 'like', "%{$keyword}%");
+                //     });
+                // })
+                // ->filterColumn('color', function ($query, $keyword) {
+                //     $query->whereHas('EstimateProductLists', function ($q) use ($keyword) {
+                //         $q->where('color', 'like', "%{$keyword}%");
+                //     });
+                // })
+                // ->filterColumn('size', function ($query, $keyword) {
+                //     $query->whereHas('EstimateProductLists', function ($q) use ($keyword) {
+                //         $q->where('size', 'like', "%{$keyword}%");
+                //     });
+                // })
                 ->make(true);
         }
     }

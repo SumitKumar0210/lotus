@@ -90,7 +90,7 @@
                         url: '{{ route("warehouse.purchase.getWarehouseAllPurchaseList") }}',
                     },
                 columns: [
-                    {data: 'DT_RowIndex', name: 'DT_RowIndex'},
+                    {data: 'DT_RowIndex', name: 'DT_RowIndex', searchable: false, orderable: false},
                     {data: 'purchase_no', name: 'purchase_no'},
                     {data: 'created_at', name: 'created_at'},
                     {data: 'brand_name', name: 'brand_name'},

@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class DashboardController extends Controller
 {
@@ -83,39 +83,77 @@ class DashboardController extends Controller
     {
         if ($request->ajax()) {
 
-            $data = Stock::whereIn('type', ['IN TRANSIT', 'BRANCH STOCK'])
+            $data = Stock::with(['branchTo:id,branch_name', 
+                                'Product:id,product_name,product_code,color_code,size', 
+                                'Product.category:id,category_name'])
+                ->whereIn('type', ['IN TRANSIT', 'BRANCH STOCK'])
                 ->whereIn('status', ['OUT STOCK', 'IN STOCK'])
                 ->where('reason', 'BRANCH TRANSFER')
-                ->where('branch_out', Auth::user()->branch_id)
-                ->get();
+                ->where('branch_out', Auth::user()->branch_id);
+                // ->get();
 
-            return Datatables::of($data)
+            return DataTables::eloquent($data)
                 ->addIndexColumn()
                 ->addColumn('branch_to', function ($row) {
-                    return $row->branchTo->branch_name ?? '';
+                    return optional($row->branchTo)->branch_name ?? '';
                 })
             	 ->addColumn('created_by', function ($row) {
 					//return $row->branchUserOut->name ?? '';
 					 return null;
                 })
                 ->addColumn('product_name', function ($row) {
-                    return $row->Product->product_name ?? '';
+                    return optional($row->Product)->product_name ?? '';
                 })
 				->addColumn('category', function ($row) {
                     return null;
 					//return $row->Product->category->category_name ?? '';
                 })
 				->addColumn('product_code', function ($row) {
-                    return $row->Product->product_code ?? '';
+                    return optional($row->Product)->product_code ?? '';
                 })
                 ->addColumn('color', function ($row) {
-                    return $row->Product->color_code ?? '';
+                    return optional($row->Product)->color_code ?? '';
                 })
                 ->addColumn('size', function ($row) {
-                    return $row->Product->size ?? '';
+                    return optional($row->Product)->size ?? '';
                 })
                 ->addColumn('qty', function ($row) {
                     return $row->qty ?? '';
+                })
+                ->filterColumn('branch_to', function ($query, $keyword) {
+                    $query->whereHas('branchTo', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('created_by', function ($query, $keyword) {
+                    $query->whereHas('branchUserOut', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('product_name', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('product_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('category', function ($query, $keyword) {
+                    $query->whereHas('Product.category', function ($q) use ($keyword) {
+                        $q->where('category_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('product_code', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('product_code', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('color', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('color_code', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('size', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('size', 'like', "%{$keyword}%");
+                    });
                 })
                 ->make(true);
         }

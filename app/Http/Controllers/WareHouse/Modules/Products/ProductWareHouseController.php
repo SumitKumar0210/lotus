@@ -9,21 +9,22 @@ use App\Models\Product;
 use App\Models\Stock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class ProductWareHouseController extends Controller
 {
     public function getWarehouseProductList(Request $request)
     {
         if ($request->ajax()) {
-            $data = Product::get();
-            return Datatables::of($data)
+            $data = Product::with(['brand:id,brand_name', 'category:id,category_name'])->orderBy('id', 'asc');
+            // ->get();
+            return DataTables::eloquent($data)
                 ->addIndexColumn()
                 ->addColumn('brand_id', function ($row) {
-                    return $row->brand->brand_name ?? '';
+                    return optional($row->brand)->brand_name ?? '';
                 })
                 ->addColumn('category_id', function ($row) {
-                    return $row->category->category_name ?? '';
+                    return optional($row->category)->category_name ?? '';
                 })
                  ->addColumn('created_at', function ($row) {
                     return \Carbon\Carbon::parse($row->created_at)->format('d-m-Y');
@@ -55,6 +56,25 @@ class ProductWareHouseController extends Controller
                     }
                     return '<span class="badge badge-success">Not Active</span>';
                 })
+                ->filterColumn('created_at', function ($query, $keyword) {
+                    $query->whereDate('created_at', date('Y-m-d',strtotime($keyword)));
+                })
+                ->filterColumn('product_name', function ($query, $keyword) {
+                    $query->where('product_name', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('product_code', function ($query, $keyword) {
+                    $query->where('product_code', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('brand_id', function ($query, $keyword) {
+                    $query->whereHas('brand', function ($q) use ($keyword) {
+                        $q->where('brand_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('category_id', function ($query, $keyword) {
+                    $query->whereHas('category', function ($q) use ($keyword) {
+                        $q->where('category_name', 'like', "%{$keyword}%");
+                    });
+                })  
                 ->rawColumns(['action', 'status'])
                 ->make(true);
         }

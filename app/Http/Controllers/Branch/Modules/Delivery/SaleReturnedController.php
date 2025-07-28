@@ -7,7 +7,8 @@ use App\Models\Estimate;
 use App\Models\EstimateProductList;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
+use Carbon\Carbon;
 
 class SaleReturnedController extends Controller
 {
@@ -25,33 +26,41 @@ class SaleReturnedController extends Controller
     public function getSaleReturnedList(Request $request)
     {
         if ($request->ajax()) {
-            $estimate = Estimate::where('payment_status', 'PAYMENT DONE')
-                ->where('branch_id', Auth::user()->branch->id)
-                ->latest()
-                ->pluck('id');
+            // $estimate = Estimate::where('payment_status', 'PAYMENT DONE')
+            //     ->where('branch_id', Auth::user()->branch->id)
+            //     ->latest()
+            //     ->pluck('id');
 
-            $data = EstimateProductList::where('delivery_status', 'DELIVERED')
-                ->whereIn('estimate_id', $estimate)
+            // $data = EstimateProductList::where('delivery_status', 'DELIVERED')
+            //     ->whereIn('estimate_id', $estimate)
+            //     ->where('is_sale_returned', 'ITEM SALE RETURNED')
+            //     ->latest();
+                // ->get();
+
+                $data = EstimateProductList::whereHas('estimate', function ($q) {
+                    $q->where('payment_status', 'PAYMENT DONE')
+                    ->where('branch_id', Auth::user()->branch->id);
+                })
+                ->where('delivery_status', 'DELIVERED')
                 ->where('is_sale_returned', 'ITEM SALE RETURNED')
-                ->latest()
-                ->get();
+                ->latest();
 
-            return Datatables::of($data)
+            return DataTables::eloquent($data)
                 ->addIndexColumn()
                 ->addColumn('estimate_no', function ($row) {
-                    return $row->Estimate->estimate_no;
+                    return optional($row->Estimate)->estimate_no ?? '';
                 })
                 ->addColumn('branch_name', function ($row) {
-                    return $row->Estimate->user->branch->branch_name;
+                    return optional($row->Estimate->user->branch)->branch_name ?? '';
                 })
                 ->addColumn('client_name', function ($row) {
-                    return $row->Estimate->client_name;
+                    return optional($row->Estimate)->client_name ?? '';
                 })
                 ->addColumn('client_mobile', function ($row) {
-                    return $row->Estimate->client_mobile;
+                    return optional($row->Estimate)->client_mobile ?? '';
                 })
                 ->addColumn('client_address', function ($row) {
-                    return $row->Estimate->client_address;
+                    return optional($row->Estimate)->client_address ?? '';
                 })
                 ->addColumn('delivery_date', function ($row) {
                     return $row->delivery_date;
@@ -77,6 +86,56 @@ class SaleReturnedController extends Controller
                 ->addColumn('sale_returned_qty', function ($row) {
                     return $row->sale_returned_qty;
                 })
+                ->filterColumn('estimate_no', function ($query, $keyword) {
+                    $query->whereHas('Estimate', function ($q) use ($keyword) {
+                        $q->where('estimate_no', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('branch_name', function ($query, $keyword) {
+                    $query->whereHas('Estimate.user.branch', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('client_name', function ($query, $keyword) {     
+                    $query->whereHas('Estimate', function ($q) use ($keyword) {
+                        $q->where('client_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('client_mobile', function ($query, $keyword) {
+                    $query->whereHas('Estimate', function ($q) use ($keyword) {
+                        $q->where('client_mobile', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('client_address', function ($query, $keyword) {
+                    $query->whereHas('Estimate', function ($q) use ($keyword) {
+                        $q->where('client_address', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('product_name', function ($query, $keyword) {
+                    $query->where('product_name', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('product_code', function ($query, $keyword) {
+                    $query->where('product_code', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('color', function ($query, $keyword) {
+                    $query->where('color', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('size', function ($query, $keyword) {
+                    $query->where('size', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('quantity', function ($query, $keyword) {
+                    $query->where('qty', 'like', "%{$keyword}%");
+                })
+
+                ->filterColumn('sale_returned_qty', function ($query, $keyword) {
+                    $query->where('sale_returned_qty', 'like', "%{$keyword}%");
+                })
+
+                // ->filterColumn('sale_returned_date', function ($query, $keyword) {
+                //     $formatted = Carbon::createFromFormat('m-d-Y', $keyword)->format('Y-m-d');
+                //     $query->whereDate('updated_at', $formatted);
+                // })
+                
                 ->make(true);
         }
     }

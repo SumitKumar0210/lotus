@@ -9,7 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class ProductReportController extends Controller
 {
@@ -27,46 +27,55 @@ class ProductReportController extends Controller
     public function getProductReportList(Request $request)
     {
         if ($request->ajax()) {
-            $usersQuery = Stock::query();
+            $usersQuery = Stock::query()
+            ->where('branch_in', Auth::user()->branch_id);
 
-            if (!empty($_GET["date_from"]) && !empty($_GET["date_to"]) && !empty($_GET["product_id"])) {
+            // if (!empty($_GET["date_from"]) && !empty($_GET["date_to"]) && !empty($_GET["product_id"])) {
 
-                $date_from = Carbon::parse($_GET["date_from"])->format('Y-m-d 00:00:00');
-                $date_to = Carbon::parse($_GET["date_to"])->format('Y-m-d 23:59:59');
+            //     $date_from = Carbon::parse($_GET["date_from"])->format('Y-m-d 00:00:00');
+            //     $date_to = Carbon::parse($_GET["date_to"])->format('Y-m-d 23:59:59');
 
-                $usersQuery
-                    ->where('branch_in', Auth::user()->branch_id)
-                   // ->where('type', 'BRANCH STOCK')
-                    ->where('product_id', $_GET["product_id"])
-                    ->whereBetween('date', [$date_from, $date_to])
-                    ->latest();
-            } else {
-                $usersQuery
-                    ->where('branch_in', Auth::user()->branch_id)
-                    //->where('type', 'BRANCH STOCK')
-                    ->latest();
+            //     $usersQuery
+            //         ->where('branch_in', Auth::user()->branch_id)
+            //        // ->where('type', 'BRANCH STOCK')
+            //         ->where('product_id', $_GET["product_id"])
+            //         ->whereBetween('date', [$date_from, $date_to])
+            //         ->latest();
+            // } else {
+            //     $usersQuery
+            //         ->where('branch_in', Auth::user()->branch_id)
+            //         //->where('type', 'BRANCH STOCK')
+            //         ->latest();
+            // }
+            if ($request->product_id) {
+                $usersQuery->where('product_id', $request->product_id);
             }
-
-            $data = $usersQuery->get();
-            return Datatables::of($data)
+            if ($request->date_from && $request->date_to) {
+                $date_from = Carbon::parse($request->date_from)->startOfDay();
+                $date_to = Carbon::parse($request->date_to)->endOfDay();
+                $usersQuery->whereBetween('date', [$date_from, $date_to]);
+            }
+            $usersQuery->latest();
+            // $data = $usersQuery->get();
+            return DataTables::of($usersQuery)
                 ->addIndexColumn()
                 ->addColumn('brand_name', function ($row) {
-                    return $row->product->brand->brand_name;
+                    return optional($row->product->brand)->brand_name ?? '';
                 })
                 ->addColumn('product_name', function ($row) {
-                    return $row->product->product_name;
+                    return optional($row->product)->product_name ?? '';
                 })
                 ->addColumn('product_code', function ($row) {
-                    return $row->product->product_code;
+                    return optional($row->product)->product_code ?? '';
                 })
                 ->addColumn('category', function ($row) {
-                    return $row->product->category->category_name;
+                    return optional($row->product->category)->category_name ?? '';
                 })
                 ->addColumn('color', function ($row) {
-                    return $row->product->color_code;
+                    return optional($row->product)->color_code ?? '';
                 })
                 ->addColumn('size', function ($row) {
-                    return $row->product->size;
+                    return optional($row->product)->size ?? '';
                 })
                 ->addColumn('status', function ($row) {
                     return $row->status;
@@ -75,10 +84,10 @@ class ProductReportController extends Controller
                     return $row->type;
                 })
                 ->addColumn('from', function ($row) {
-                    return $row->to->branch->branch_name ?? '';
+                    return optional($row->to->branch)->branch_name ?? '';
                 })
                 ->addColumn('to', function ($row) {
-                    return $row->branchTo->branch_name ?? '';
+                    return optional($row->branchTo)->branch_name ?? '';
                 })
                 ->addColumn('date', function ($row) {
                     return $row->date;
@@ -89,7 +98,65 @@ class ProductReportController extends Controller
                 ->addColumn('remarks', function ($row) {
                     return $row->remarks;
                 })
-                ->make(true);
+                ->filterColumn('product_name', function ($query, $keyword) {
+                    $query->whereHas('product', function ($q) use ($keyword) {
+                        $q->where('product_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('product_code', function ($query, $keyword) {
+                    $query->whereHas('product', function ($q) use ($keyword) {
+                        $q->where('product_code', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('brand_name', function ($query, $keyword) {      
+                    $query->whereHas('product.brand', function ($q) use ($keyword) {
+                        $q->where('brand_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('category', function ($query, $keyword) {
+                    $query->whereHas('product.category', function ($q) use ($keyword) {
+                        $q->where('category_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('color', function ($query, $keyword) {
+                    $query->whereHas('product', function ($q) use ($keyword) {
+                        $q->where('color_code', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('size', function ($query, $keyword) {
+                    $query->whereHas('product', function ($q) use ($keyword) {
+                        $q->where('size', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('status', function ($query, $keyword) {
+                    $query->where('status', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('type', function ($query, $keyword) {
+                    $query->where('type', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('from', function ($query, $keyword) {
+                    $query->whereHas('to.branch', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('to', function ($query, $keyword) {
+                    $query->whereHas('branchTo', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('date', function ($query, $keyword) {
+                    try {
+                        $formatted = Carbon::parse($keyword)->format('Y-m-d');
+                        $query->where('date', 'like', "%{$formatted}%");
+                    } catch (\Exception $e) {
+                        // Invalid date input — skip filtering
+                    }
+                })
+                
+                ->filterColumn('remarks', function ($query, $keyword) {
+                    $query->where('remarks', 'like', "%{$keyword}%");
+                })
+                 ->make(true);
         }
     }
 

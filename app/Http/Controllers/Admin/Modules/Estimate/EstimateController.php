@@ -31,14 +31,14 @@ class EstimateController extends Controller
     {
         if ($request->ajax()) {
            
-            $data = Estimate::with('EstimateProductLists', 'EstimatePaymentLists')
+            $data = Estimate::with('EstimateProductLists', 'EstimatePaymentLists','user.branch:id,branch_name')
                 ->where('estimate_status', '!=', 'ESTIMATE CANCELLED')
                 ->latest();
 
             return DataTables::eloquent($data)
                 ->addIndexColumn()
                 ->addColumn('branch_name', function ($row) {
-                    return $row->user->branch->branch_name;
+                    return optional($row->user->branch)->branch_name;
                 })
                 ->addColumn('total_paid', function ($row) {
                     return $row->EstimatePaymentLists->sum('total_paid');

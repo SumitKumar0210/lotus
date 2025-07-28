@@ -79,7 +79,7 @@
                 serverSide: true,
                 ajax: "{{route('branch.estimateListCancelled.getEstimateListCancelled')}}",
                 columns: [
-                    {data: 'DT_RowIndex', name: 'DT_RowIndex'},
+                    {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                     {data: 'estimate_no', name: 'estimate_no'},
                     {data: 'branch_name', name: 'branch_name'},
                     {data: 'client_name', name: 'client_name'},

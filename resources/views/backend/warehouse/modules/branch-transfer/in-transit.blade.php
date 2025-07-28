@@ -82,7 +82,9 @@
                 ajax: "{{ route('warehouse.branch-transfer.getInTransitWarehouseList') }}",
                 columns: [{
                         data: 'DT_RowIndex',
-                        name: 'DT_RowIndex'
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false
                     },
                     {
                         data: 'created_at',

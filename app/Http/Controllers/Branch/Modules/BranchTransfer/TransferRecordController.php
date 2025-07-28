@@ -11,7 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class TransferRecordController extends Controller
 {
@@ -103,41 +103,65 @@ class TransferRecordController extends Controller
             //->where('is_returned', 'RETURNED')
             // ->get();
 
-            $stock = Stock::orWhere('branch_out', Auth::user()->branch_id)
-                ->orWhere('branch_in', Auth::user()->branch_id)
-                //->where('type', 'BRANCH STOCK')
-                //->where('status', 'IN STOCK')
+            // $stock = Stock::with([
+            //         'branchUserOut:id,name', 
+            //         'branchUserIn:id,name', 
+            //         'Product:id,product_name,product_code,size,category_id',
+            //         'Product.category:id,category_name',
+            //         'branchReturnUser:id,name',
+            //         'fromTwo:id,branch_name', 
+            //         'branchTo:id,branch_name'
+            //     ])
+            //     ->orWhere('branch_out', Auth::user()->branch_id)
+            //     ->orWhere('branch_in', Auth::user()->branch_id)
+            //     //->where('type', 'BRANCH STOCK')
+            //     //->where('status', 'IN STOCK')
+            //     ->where('reason', 'BRANCH TRANSFER');
+            //     // ->get();
+
+            $branchId = Auth::user()->branch_id;
+
+            $stock = Stock::with([
+                    'branchUserOut:id,name', 
+                    'Product:id,product_name,product_code,size,category_id',
+                    'Product.category:id,category_name',
+                    'branchReturnUser:id,name',
+                    'fromTwo:id,branch_name', 
+                    'branchTo:id,branch_name'
+                ])
                 ->where('reason', 'BRANCH TRANSFER')
-                ->get();
+                ->where(function ($q) use ($branchId) {
+                    $q->where('branch_out', $branchId)
+                    ->orWhere('branch_in', $branchId);
+                });
 
 
-
-            return Datatables::of($stock)
+            return DataTables::eloquent($stock)
                 ->addIndexColumn()
                 ->addColumn('from', function ($row) {
-                    return $row->fromTwo->branch_name ?? '';
+                    return optional($row->fromTwo)->branch_name ?? '';
                 })
                 ->addColumn('to', function ($row) {
-                    return $row->branchTo->branch_name ?? '';
+                    return optional($row->branchTo)->branch_name ?? '';
                 })
 
                 ->addColumn('branch_transfer_no', function ($row) {
                     return $row->transfer_no ?? '';
                 })
                 ->addColumn('product_name', function ($row) {
-                    return $row->Product->product_name ?? '';
+                    return optional($row->Product)->product_name ?? '';
                 })
 				 ->addColumn('category', function ($row) {
-                    return $row->Product->category->category_name ?? '';
+                    return optional($row->Product->category)->category_name ?? '';
                 })
                 ->addColumn('model_no', function ($row) {
-                    return $row->Product->product_code ?? '';
+                    return optional($row->Product)->product_code ?? '';
                 })
 				->addColumn('size', function ($row) {
-                    return $row->Product->size ?? '';
+                    return optional($row->Product)->size ?? '';
                 })
                 ->addColumn('created_by', function ($row) {
-                    return $row->branchReturnUser->name ?? '';
+                    return optional($row->branchReturnUser)->name ?? '';
                 })
                 ->addColumn('qty', function ($row) {
                     return $row->qty ?? '';
@@ -150,13 +174,64 @@ class TransferRecordController extends Controller
                 })
 
                 ->addColumn('created_by', function ($row) {
-                    return $row->created_by->name ?? '';
+                    return optional($row->created_by)->name ?? '';
                 })
                 ->addColumn('accepted_by', function ($row) {
-                    return $row->branchUserOut->name ?? '';
+                    return optional($row->branchUserOut)->name ?? '';
                 })
                 ->addColumn('created_at', function ($row) {
                     return Carbon::parse($row->created_at)->format('d-F-Y') ?? '';
+                })
+                ->filterColumn('branch_transfer_no', function ($query, $keyword) {
+                    $query->where('transfer_no', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('from', function ($query, $keyword) {
+                    $query->whereHas('fromTwo', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('to', function ($query, $keyword) {
+                    $query->whereHas('branchTo', function ($q) use ($keyword) {
+                        $q->where('branch_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('product_name', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('product_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('category', function ($query, $keyword) {
+                    $query->whereHas('Product.category', function ($q) use ($keyword) { 
+                        $q->where('category_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('model_no', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('product_code', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('size', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('size', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('created_by', function ($query, $keyword) {
+                    $query->whereHas('branchReturnUser', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('accepted_by', function ($query, $keyword) {
+                    $query->whereHas('branchUserOut', function ($q) use ($keyword) {
+                        $q->where('name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('created_at', function ($query, $keyword) {
+                    try {
+                        $formatted = date('Y-m-d', strtotime($keyword));
+                        $query->whereDate('created_at', $formatted);
+                    } catch (\Exception $e) {
+                        // Invalid date format — ignore filter
+                    }
                 })
                 ->make(true);
         }

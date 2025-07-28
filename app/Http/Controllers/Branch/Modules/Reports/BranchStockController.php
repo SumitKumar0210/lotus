@@ -10,7 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Yajra\DataTables\DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class BranchStockController extends Controller
 {
@@ -29,49 +29,66 @@ class BranchStockController extends Controller
 
         //2021-01-14 16:29:19
         if ($request->ajax()) {
-            $usersQuery = Stock::query();
-            if (!empty($_GET["date_from"]) && !empty($_GET["date_to"]) && !empty($_GET["product_id"])) {
+            $usersQuery = Stock::query()
+                ->with(['Product:id,product_name,product_code,color_code,size', 
+                'Product.category:id,category_name', 
+                'branchReturnUser:id,name',
+                'branchUserOut:id,name'])
+                ->where('status', 'IN STOCK')
+                ->where('branch_in', Auth::user()->branch_id);
+            // if (!empty($_GET["date_from"]) && !empty($_GET["date_to"]) && !empty($_GET["product_id"])) {
 
-                $date_from = Carbon::parse($_GET["date_from"])->format('Y-m-d 00:00:00');
-                $date_to = Carbon::parse($_GET["date_to"])->format('Y-m-d 23:59:59');
+            //     $date_from = Carbon::parse($_GET["date_from"])->format('Y-m-d 00:00:00');
+            //     $date_to = Carbon::parse($_GET["date_to"])->format('Y-m-d 23:59:59');
 
-                //2021-01-14 00:00:00
-                //2021-01-14 23:59:59
+            //     //2021-01-14 00:00:00
+            //     //2021-01-14 23:59:59
 
-                $usersQuery
-                    ->where('status', 'IN STOCK')
-                    ->where('branch_in', Auth::user()->branch_id)
-                    ->where('product_id', $_GET["product_id"])
-                    ->whereBetween('date', [$date_from, $date_to])
-                    ->latest();
-            } else {
-                $usersQuery->where('status', 'IN STOCK')
-                    ->where('branch_in', Auth::user()->branch_id)
-                    ->latest();
+            //     $usersQuery
+            //         ->where('status', 'IN STOCK')
+            //         ->where('branch_in', Auth::user()->branch_id)
+            //         ->where('product_id', $_GET["product_id"])
+            //         ->whereBetween('date', [$date_from, $date_to])
+            //         ->latest();
+            // } else {
+            //     $usersQuery->where('status', 'IN STOCK')
+            //         ->where('branch_in', Auth::user()->branch_id)
+            //         ->latest();
+            // }
+
+            if($request->product_id) {
+                $usersQuery->where('product_id', $request->product_id);
+            }
+            if ($request->date_from && $request->date_to) {
+                $date_from = Carbon::parse($request->date_from)->format('Y-m-d 00:00:00');
+                $date_to = Carbon::parse($request->date_to)->format('Y-m-d 23:59:59');
+
+                $usersQuery->whereBetween('created_at', [$date_from, $date_to]);
             }
 
 
-            $data = $usersQuery->groupBy('product_id')->get();
-            return Datatables::of($data)
+            $data = $usersQuery->groupBy('product_id');
+            // ->get();
+            return DataTables::eloquent($data)
                 ->addIndexColumn()
                 ->addColumn('brand_name', function ($row) {
-                    return $row->product->brand->brand_name;
+                    return optional($row->product->brand)->brand_name ?? '';
                 })
 
                 ->addColumn('product_name', function ($row) {
-                    return $row->product->product_name;
+                    return optional($row->product)->product_name ?? '';
                 })
                 ->addColumn('product_code', function ($row) {
-                    return $row->product->product_code;
+                    return optional($row->product)->product_code ?? '';
                 })
                 ->addColumn('category', function ($row) {
-                    return $row->product->category->category_name;
+                    return optional($row->product->category)->category_name ?? '';
                 })
                 ->addColumn('color', function ($row) {
-                    return $row->product->color_code;
+                    return optional($row->product)->color_code ?? '';
                 })
                 ->addColumn('size', function ($row) {
-                    return $row->product->size;
+                    return optional($row->product)->size ?? '';
                 })
                 ->addColumn('opening_qty', function ($row) {
 
@@ -117,6 +134,41 @@ class BranchStockController extends Controller
 
 
                 })
+                ->filterColumn('product_name', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('product_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('product_code', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('product_code', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('category', function ($query, $keyword) {
+                    $query->whereHas('Product.category', function ($q) use ($keyword) {
+                        $q->where('category_name', 'like', "%{$keyword}%");
+                    });
+                })  
+                ->filterColumn('color', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('color_code', 'like', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('size', function ($query, $keyword) {
+                    $query->whereHas('Product', function ($q) use ($keyword) {
+                        $q->where('size', 'like', "%{$keyword}%");
+                    });
+                })
+                // ->filterColumn('opening_qty', function ($query, $order) {
+                //     $query->whereHas('StockQty', function ($q) use ($order) {
+                //         $q->where('qty', 'like', "%{$order}%");
+                //     });
+                // })
+                // ->filterColumn('closing_qty', function ($query, $order) {
+                //     $query->whereHas('StockQty', function ($q) use ($order) {
+                //         $q->where('qty', 'like', "%{$order}%");
+                //     });
+                // })
                 ->make(true);
         }
     }

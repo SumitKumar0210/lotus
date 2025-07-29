@@ -146,6 +146,64 @@
 
 
 
+                @if(Auth::user()->branch_id == '20')
+            <li class="nav-label">Cashbook HO</li>
+           {{-- <?php dd(Request::path()); ?> --}}
+            
+            <li class="nav-item {{ Request::path() === 'branch/HOcashbook/admin-cashbookListHO' ? 'active show' : '' }} ">
+                <a class="nav-link" href="{{route('branch.cashbookHO.adminCashbookHO')}}"><i
+                        class="fe fe-book-open"></i>
+                    <span class="sidemenu-label">HO Report</span>
+                </a>
+            </li>
+            <li class="nav-item {{ Request::path() === 'branch/HOcashbook/admin-cashbook' ? 'active show' : '' }} ">
+                <a class="nav-link" href="{{route('branch.cashbookHO.cashbook')}}"><i class="fe fe-book-open"></i>
+                    <span class="sidemenu-label">Cashbook</span>
+                </a>
+            </li>
+            <li class="nav-item {{ Request::path() === 'branch/HOcashbook/receiveCashList' ? 'active show' : '' }}">
+                <a class="nav-link" href="{{route('branch.cashbookHO.receiveCashList')}}"><i
+                        class="fe fe-book-open"></i>
+                    <span class="sidemenu-label">Receive Cash</span>
+                </a>
+            </li>
+			<li class="nav-item {{ Request::path() === 'branch/cashbook/expenses' ? 'active show' : '' }} ">
+                <a class="nav-link" href="{{ route('expenses.index') }}"><i class="fe fe-file-text"></i>
+                    <span class="sidemenu-label">Expense</span>
+                </a>
+            </li>
+			<li class="nav-item {{ Request::path() === 'branch/cashbook/report' ? 'active show' : '' }} ">
+                <a class="nav-link" href="{{ route('branch.cashbook.report') }}"><i class="fe fe-file-text"></i>
+                    <span class="sidemenu-label">Report</span>
+                </a>
+            </li>
+			@else
+				<li class="nav-label">Cashbook</li>
+            <li class="nav-item {{ Request::path() === 'branch/cashbook/branch-cashbookList' ? 'active show' : '' }} ">
+                <a class="nav-link" href="{{route('branch.cashbook.cashbookList')}}"><i class="fe fe-book-open"></i>
+                    <span class="sidemenu-label">Cashbook</span>
+                </a>
+            </li>
+            <li class="nav-item {{ Request::path() == 'branch/cashbook/receive-branch-cashbookList' ? 'active show' : '' }} ">
+                <a class="nav-link" href="{{route('branch.cashbook.receiveCashbookList')}}"><i
+                        class="fe fe-book-open"></i>
+                    <span class="sidemenu-label">Receive Cash</span>
+                </a>
+            </li>
+
+            <li class="nav-item {{ Request::path() === '/branch/cashbook/expenses' ? 'active show' : '' }} ">
+                <a class="nav-link" href="{{ route('expenses.index') }}"><i class="fe fe-file-text"></i>
+                    <span class="sidemenu-label">Expense</span>
+                </a>
+            </li>
+            <li class="nav-item {{ Request::path() === '/branch/cashbook/report' ? 'active show' : '' }} ">
+                <a class="nav-link" href="{{ route('branch.cashbook.report') }}"><i class="fe fe-file-text"></i>
+                    <span class="sidemenu-label">Report</span>
+                </a>
+            </li>
+            @endif
+
+
 
 
             <li class="nav-label">Reports</li>

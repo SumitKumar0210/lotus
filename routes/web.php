@@ -30,6 +30,7 @@ use App\Http\Controllers\Branch\Modules\Purchase\BranchAllPurchaseController;
 use App\Http\Controllers\Branch\Modules\Purchase\BranchLastPurchaseController;
 use App\Http\Controllers\Branch\Modules\Purchase\BranchPurchaseController;
 use App\Http\Controllers\Branch\Modules\Delivery\DueDeliveryNewController;
+use App\Http\Controllers\Branch\Modules\Cashbook\BranchExpenseController;
 use App\Http\Controllers\LoginController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -470,7 +471,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'verified', 
         Route::post('report-data', '\App\Http\Controllers\Admin\Modules\Cashbook\ReportController@getData')->name('admin.cashbook.getData');
     });
 
-    
+
 });
 //admin
 
@@ -687,7 +688,62 @@ Route::group(['prefix' => 'branch', 'middleware' => ['auth:sanctum', 'verified',
     //branch-product
 
 
+    Route::prefix('cashbook')->group(function () {
+        //cashbook
+        Route::get('branch-cashbookList', '\App\Http\Controllers\Branch\Modules\Cashbook\BranchCashbookController@cashbookList')->name('branch.cashbook.cashbookList');
+        Route::get('receive-branch-cashbookList', '\App\Http\Controllers\Branch\Modules\Cashbook\BranchCashbookController@receiveCashbookList')->name('branch.cashbook.receiveCashbookList');
+        Route::get('branch-create-cashbookList', '\App\Http\Controllers\Branch\Modules\Cashbook\BranchCashbookController@createCashbookList')->name('branch.cashbook.createCashbookList');
+        Route::post('add-cashbookList', '\App\Http\Controllers\Branch\Modules\Cashbook\BranchCashbookController@store')->name('branch.cashbook.store');
+        Route::post('manage-opening-closing', '\App\Http\Controllers\Branch\Modules\Cashbook\BranchCashbookController@manageOpeningClosing')->name('branch.cashbook.manageOpeningClosing');
 
+
+        Route::get('receive-cash-data/{id}', '\App\Http\Controllers\Branch\Modules\Cashbook\BranchCashbookController@receiveCashData')->name('branch.cashbook.receiveCashData');
+        Route::post('approve-receive-cash', '\App\Http\Controllers\Branch\Modules\Cashbook\BranchCashbookController@approveReceiveCash')->name('branch.cashbook.approveReceiveCash');
+        Route::post('decline-receive-cash', '\App\Http\Controllers\Branch\Modules\Cashbook\BranchCashbookController@declineReceiveCash')->name('branch.cashbook.declineReceiveCash');
+
+        //Expense
+        Route::resource('/expenses', BranchExpenseController::class);
+
+        //Report
+        Route::get('report', '\App\Http\Controllers\Branch\Modules\Cashbook\BranchReportController@report')->name('branch.cashbook.report');
+
+        Route::post('report-data', '\App\Http\Controllers\Branch\Modules\Cashbook\BranchReportController@getData')->name('branch.cashbook.getData');
+    });
+
+    Route::prefix('HOcashbook')->group(function () {
+        //cashbook
+
+        Route::get('cashbookList', '\App\Http\Controllers\Branch\Modules\Cashbook\HOCashbokController@cashbookList')->name('branch.cashbookHO.cashbookList');
+        Route::get('cashbook-branch/{id}', '\App\Http\Controllers\Branch\Modules\Cashbook\HOCashbokController@cashbookBranch')->name('branch.cashbookHO.cashbookBranch');
+        Route::post('update-openingBalance', '\App\Http\Controllers\Branch\Modules\Cashbook\HOCashbokController@updateOpeningBalance')->name('branch.cashbookHO.updateOpeningBalance');
+
+        Route::get('admin-cashbook', '\App\Http\Controllers\Branch\Modules\Cashbook\HOCashbokController@cashbook')->name('branch.cashbookHO.cashbook');
+        Route::get('branch-create-cashbook', '\App\Http\Controllers\Branch\Modules\Cashbook\HOCashbokController@createCashbook')->name('branch.cashbookHO.createCashbook');
+        Route::post('add-cashbook', '\App\Http\Controllers\Branch\Modules\Cashbook\HOCashbokController@store')->name('branch.cashbookHO.store');
+
+        Route::get('admin-cashbookListHO', '\App\Http\Controllers\Branch\Modules\Cashbook\HOCashbokController@adminCashbookHO')->name('branch.cashbookHO.adminCashbookHO');
+        Route::post('admin-manage-opening-closing', '\App\Http\Controllers\Branch\Modules\Cashbook\HOCashbokController@adminManageOpeningClosing')->name('branch.cashbookHO.adminManageOpeningClosing');
+
+        //Receive cash
+        Route::get('receiveCashList', '\App\Http\Controllers\Branch\Modules\Cashbook\HOReceiveCashController@receiveCashList')->name('branch.cashbookHO.receiveCashList');
+        Route::get('receive-cash-data/{id}', '\App\Http\Controllers\Branch\Modules\Cashbook\HOReceiveCashController@receiveCashData')->name('branch.cashbookHO.receiveCashData');
+        Route::post('approve-receive-cash', '\App\Http\Controllers\Branch\Modules\Cashbook\HOReceiveCashController@approveReceiveCash')->name('branch.cashbookHO.approveReceiveCash');
+        Route::post('decline-receive-cash', '\App\Http\Controllers\Branch\Modules\Cashbook\HOReceiveCashController@declineReceiveCash')->name('branch.cashbookHO.declineReceiveCash');
+
+        //Credit Note
+        // Route::get('creditNote', '\App\Http\Controllers\Branch\Modules\CashbookHO\CreditNoteController@creditNote')->name('branch.cashbookHO.creditNote');
+
+        //Expense
+        Route::get('expense', '\App\Http\Controllers\Branch\Modules\Cashbook\HOExpenseController@expense')->name('branch.cashbookHO.expense');
+        Route::post('add-expense', '\App\Http\Controllers\Branch\Modules\Cashbook\HOExpenseController@addExpense')->name('branch.cashbookHO.addExpense');
+        Route::get('get-expense/{id}', '\App\Http\Controllers\Branch\Modules\Cashbook\HOExpenseController@editExpense')->name('branch.cashbookHO.editExpense');
+        Route::post('update-expense', '\App\Http\Controllers\Branch\Modules\Cashbook\HOExpenseController@updateExpense')->name('branch.cashbookHO.updateExpense');
+        Route::get('approve-expense/{id}', '\App\Http\Controllers\Branch\Modules\Cashbook\HOExpenseController@approveExpense')->name('branch.cashbookHO.approveExpense');
+
+        //Report
+        // Route::get('report', '\App\Http\Controllers\Branch\Modules\Cashbook\ReportController@report')->name('branch.cashbookHO.report');
+        Route::post('report-data', '\App\Http\Controllers\Branch\Modules\Cashbook\HOReportController@getData')->name('branch.cashbookHO.getData');
+    });
 
 
 });

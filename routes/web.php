@@ -75,7 +75,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'verified', 
 
 
     Route::prefix('product')->group(function () {
-
+ 
         //brand
         Route::resource('/brand', BrandController::class);
         Route::get('getBrandsList', 'App\Http\Controllers\Admin\Modules\Products\BrandController@getBrandsList')->name('brand.getBrandsList');
@@ -300,6 +300,177 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'verified', 
 
 
     });
+
+
+
+     Route::prefix('cashbook')->group(function () {
+        //cashbook
+
+        Route::get('cashbookList', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbookList')->name('admin.cashbook.cashbookList');
+        Route::get('cashbook-branch/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbookBranch')->name('admin.cashbook.cashbookBranch');
+        Route::post('update-openingBalance', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@updateOpeningBalance')->name('admin.cashbook.updateOpeningBalance');
+
+        Route::get('admin-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbook')->name('admin.cashbook.cashbook');
+        Route::get('admin-create-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@createCashbook')->name('admin.cashbook.createCashbook');
+        Route::post('add-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@store')->name('admin.cashbook.store');
+
+        Route::get('admin-cashbookList', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@adminCashbook')->name('admin.cashbook.adminCashbook');
+        Route::post('admin-manage-opening-closing', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@adminManageOpeningClosing')->name('admin.cashbook.adminManageOpeningClosing');
+
+        //Receive cash
+        Route::get('receiveCashList', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@receiveCashList')->name('admin.cashbook.receiveCashList');
+        Route::get('receive-cash-data/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@receiveCashData')->name('admin.cashbook.receiveCashData');
+        Route::post('approve-receive-cash', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@approveReceiveCash')->name('admin.cashbook.approveReceiveCash');
+        Route::post('decline-receive-cash', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@declineReceiveCash')->name('admin.cashbook.declineReceiveCash');
+
+        //Credit Note
+        Route::get('creditNote', '\App\Http\Controllers\Admin\Modules\Cashbook\CreditNoteController@creditNote')->name('admin.cashbook.creditNote');
+
+        //Expense
+        Route::get('expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@expense')->name('admin.cashbook.expense');
+        Route::post('add-expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@addExpense')->name('admin.cashbook.addExpense');
+        Route::get('get-expense/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@editExpense')->name('admin.cashbook.editExpense');
+        Route::post('update-expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@updateExpense')->name('admin.cashbook.updateExpense');
+        Route::get('approve-expense/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@approveExpense')->name('admin.cashbook.approveExpense');
+
+        //Report
+        // Route::get('report', '\App\Http\Controllers\Admin\Modules\Cashbook\ReportController@report')->name('admin.cashbook.report');
+        Route::post('report-data', '\App\Http\Controllers\Admin\Modules\Cashbook\ReportController@getData')->name('admin.cashbook.getData');
+    }); Route::prefix('cashbook')->group(function () {
+        //cashbook
+
+        Route::get('cashbookList', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbookList')->name('admin.cashbook.cashbookList');
+        Route::get('cashbook-branch/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbookBranch')->name('admin.cashbook.cashbookBranch');
+        Route::post('update-openingBalance', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@updateOpeningBalance')->name('admin.cashbook.updateOpeningBalance');
+
+        Route::get('admin-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbook')->name('admin.cashbook.cashbook');
+        Route::get('admin-create-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@createCashbook')->name('admin.cashbook.createCashbook');
+        Route::post('add-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@store')->name('admin.cashbook.store');
+
+        Route::get('admin-cashbookList', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@adminCashbook')->name('admin.cashbook.adminCashbook');
+        Route::post('admin-manage-opening-closing', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@adminManageOpeningClosing')->name('admin.cashbook.adminManageOpeningClosing');
+
+        //Receive cash
+        Route::get('receiveCashList', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@receiveCashList')->name('admin.cashbook.receiveCashList');
+        Route::get('receive-cash-data/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@receiveCashData')->name('admin.cashbook.receiveCashData');
+        Route::post('approve-receive-cash', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@approveReceiveCash')->name('admin.cashbook.approveReceiveCash');
+        Route::post('decline-receive-cash', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@declineReceiveCash')->name('admin.cashbook.declineReceiveCash');
+
+        //Credit Note
+        Route::get('creditNote', '\App\Http\Controllers\Admin\Modules\Cashbook\CreditNoteController@creditNote')->name('admin.cashbook.creditNote');
+
+        //Expense
+        Route::get('expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@expense')->name('admin.cashbook.expense');
+        Route::post('add-expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@addExpense')->name('admin.cashbook.addExpense');
+        Route::get('get-expense/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@editExpense')->name('admin.cashbook.editExpense');
+        Route::post('update-expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@updateExpense')->name('admin.cashbook.updateExpense');
+        Route::get('approve-expense/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@approveExpense')->name('admin.cashbook.approveExpense');
+
+        //Report
+        // Route::get('report', '\App\Http\Controllers\Admin\Modules\Cashbook\ReportController@report')->name('admin.cashbook.report');
+        Route::post('report-data', '\App\Http\Controllers\Admin\Modules\Cashbook\ReportController@getData')->name('admin.cashbook.getData');
+    }); Route::prefix('cashbook')->group(function () {
+        //cashbook
+
+        Route::get('cashbookList', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbookList')->name('admin.cashbook.cashbookList');
+        Route::get('cashbook-branch/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbookBranch')->name('admin.cashbook.cashbookBranch');
+        Route::post('update-openingBalance', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@updateOpeningBalance')->name('admin.cashbook.updateOpeningBalance');
+
+        Route::get('admin-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbook')->name('admin.cashbook.cashbook');
+        Route::get('admin-create-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@createCashbook')->name('admin.cashbook.createCashbook');
+        Route::post('add-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@store')->name('admin.cashbook.store');
+
+        Route::get('admin-cashbookList', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@adminCashbook')->name('admin.cashbook.adminCashbook');
+        Route::post('admin-manage-opening-closing', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@adminManageOpeningClosing')->name('admin.cashbook.adminManageOpeningClosing');
+
+        //Receive cash
+        Route::get('receiveCashList', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@receiveCashList')->name('admin.cashbook.receiveCashList');
+        Route::get('receive-cash-data/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@receiveCashData')->name('admin.cashbook.receiveCashData');
+        Route::post('approve-receive-cash', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@approveReceiveCash')->name('admin.cashbook.approveReceiveCash');
+        Route::post('decline-receive-cash', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@declineReceiveCash')->name('admin.cashbook.declineReceiveCash');
+
+        //Credit Note
+        Route::get('creditNote', '\App\Http\Controllers\Admin\Modules\Cashbook\CreditNoteController@creditNote')->name('admin.cashbook.creditNote');
+
+        //Expense
+        Route::get('expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@expense')->name('admin.cashbook.expense');
+        Route::post('add-expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@addExpense')->name('admin.cashbook.addExpense');
+        Route::get('get-expense/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@editExpense')->name('admin.cashbook.editExpense');
+        Route::post('update-expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@updateExpense')->name('admin.cashbook.updateExpense');
+        Route::get('approve-expense/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@approveExpense')->name('admin.cashbook.approveExpense');
+
+        //Report
+        // Route::get('report', '\App\Http\Controllers\Admin\Modules\Cashbook\ReportController@report')->name('admin.cashbook.report');
+        Route::post('report-data', '\App\Http\Controllers\Admin\Modules\Cashbook\ReportController@getData')->name('admin.cashbook.getData');
+    }); Route::prefix('cashbook')->group(function () {
+        //cashbook
+
+        Route::get('cashbookList', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbookList')->name('admin.cashbook.cashbookList');
+        Route::get('cashbook-branch/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbookBranch')->name('admin.cashbook.cashbookBranch');
+        Route::post('update-openingBalance', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@updateOpeningBalance')->name('admin.cashbook.updateOpeningBalance');
+
+        Route::get('admin-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbook')->name('admin.cashbook.cashbook');
+        Route::get('admin-create-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@createCashbook')->name('admin.cashbook.createCashbook');
+        Route::post('add-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@store')->name('admin.cashbook.store');
+
+        Route::get('admin-cashbookList', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@adminCashbook')->name('admin.cashbook.adminCashbook');
+        Route::post('admin-manage-opening-closing', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@adminManageOpeningClosing')->name('admin.cashbook.adminManageOpeningClosing');
+
+        //Receive cash
+        Route::get('receiveCashList', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@receiveCashList')->name('admin.cashbook.receiveCashList');
+        Route::get('receive-cash-data/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@receiveCashData')->name('admin.cashbook.receiveCashData');
+        Route::post('approve-receive-cash', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@approveReceiveCash')->name('admin.cashbook.approveReceiveCash');
+        Route::post('decline-receive-cash', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@declineReceiveCash')->name('admin.cashbook.declineReceiveCash');
+
+        //Credit Note
+        Route::get('creditNote', '\App\Http\Controllers\Admin\Modules\Cashbook\CreditNoteController@creditNote')->name('admin.cashbook.creditNote');
+
+        //Expense
+        Route::get('expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@expense')->name('admin.cashbook.expense');
+        Route::post('add-expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@addExpense')->name('admin.cashbook.addExpense');
+        Route::get('get-expense/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@editExpense')->name('admin.cashbook.editExpense');
+        Route::post('update-expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@updateExpense')->name('admin.cashbook.updateExpense');
+        Route::get('approve-expense/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@approveExpense')->name('admin.cashbook.approveExpense');
+
+        //Report
+        // Route::get('report', '\App\Http\Controllers\Admin\Modules\Cashbook\ReportController@report')->name('admin.cashbook.report');
+        Route::post('report-data', '\App\Http\Controllers\Admin\Modules\Cashbook\ReportController@getData')->name('admin.cashbook.getData');
+    }); Route::prefix('cashbook')->group(function () {
+        //cashbook
+
+        Route::get('cashbookList', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbookList')->name('admin.cashbook.cashbookList');
+        Route::get('cashbook-branch/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbookBranch')->name('admin.cashbook.cashbookBranch');
+        Route::post('update-openingBalance', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@updateOpeningBalance')->name('admin.cashbook.updateOpeningBalance');
+
+        Route::get('admin-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@cashbook')->name('admin.cashbook.cashbook');
+        Route::get('admin-create-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@createCashbook')->name('admin.cashbook.createCashbook');
+        Route::post('add-cashbook', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@store')->name('admin.cashbook.store');
+
+        Route::get('admin-cashbookList', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@adminCashbook')->name('admin.cashbook.adminCashbook');
+        Route::post('admin-manage-opening-closing', '\App\Http\Controllers\Admin\Modules\Cashbook\CashbookController@adminManageOpeningClosing')->name('admin.cashbook.adminManageOpeningClosing');
+
+        //Receive cash
+        Route::get('receiveCashList', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@receiveCashList')->name('admin.cashbook.receiveCashList');
+        Route::get('receive-cash-data/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@receiveCashData')->name('admin.cashbook.receiveCashData');
+        Route::post('approve-receive-cash', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@approveReceiveCash')->name('admin.cashbook.approveReceiveCash');
+        Route::post('decline-receive-cash', '\App\Http\Controllers\Admin\Modules\Cashbook\ReceiveCashController@declineReceiveCash')->name('admin.cashbook.declineReceiveCash');
+
+        //Credit Note
+        Route::get('creditNote', '\App\Http\Controllers\Admin\Modules\Cashbook\CreditNoteController@creditNote')->name('admin.cashbook.creditNote');
+
+        //Expense
+        Route::get('expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@expense')->name('admin.cashbook.expense');
+        Route::post('add-expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@addExpense')->name('admin.cashbook.addExpense');
+        Route::get('get-expense/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@editExpense')->name('admin.cashbook.editExpense');
+        Route::post('update-expense', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@updateExpense')->name('admin.cashbook.updateExpense');
+        Route::get('approve-expense/{id}', '\App\Http\Controllers\Admin\Modules\Cashbook\ExpenseController@approveExpense')->name('admin.cashbook.approveExpense');
+
+        //Report
+        // Route::get('report', '\App\Http\Controllers\Admin\Modules\Cashbook\ReportController@report')->name('admin.cashbook.report');
+        Route::post('report-data', '\App\Http\Controllers\Admin\Modules\Cashbook\ReportController@getData')->name('admin.cashbook.getData');
+    });
+
+    
 });
 //admin
 

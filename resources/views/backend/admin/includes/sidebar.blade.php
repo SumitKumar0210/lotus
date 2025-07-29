@@ -148,6 +148,44 @@
             {{-- </li> --}}
 
 
+            <li class="nav-label">Cashbook</li>
+            <li class="nav-item {{Request::path() === 'admin/cashbook/cashbookList' ? 'active show' : '' }}">
+                {{-- <a class="nav-link" href="javascript:void(0)" data-target="#modaldemo1" data-toggle="modal"><i
+                        class="fe fe-book-open"></i>
+                    <span class="sidemenu-label">Cashbook</span>
+                </a> --}}
+                <a class="nav-link" 
+                href="{{route('admin.cashbook.cashbookList')}}"><i class="fe fe-book-open"></i>
+                    <span class="sidemenu-label">Branch Report</span>
+                </a>
+            </li>
+            <li class="nav-item {{Request::path() === 'admin/cashbook/admin-cashbookList' ? 'active show' : '' }}">
+                <a class="nav-link" href="{{route('admin.cashbook.adminCashbook')}}"><i class="fe fe-book-open"></i>
+                    <span class="sidemenu-label">Admin Report</span>
+                </a>
+            </li>
+            <li class="nav-item {{Request::path() === 'admin/cashbook/admin-cashbook' ? 'active show' : '' }}">
+                <a class="nav-link" href="{{route('admin.cashbook.cashbook')}}"><i class="fe fe-book-open"></i>
+                    <span class="sidemenu-label">Cashbook</span>
+                </a>
+            </li>
+            <li class="nav-item {{Request::path() === 'admin/cashbook/receiveCashList' ? 'active show' : '' }}">
+                <a class="nav-link" href="{{route('admin.cashbook.receiveCashList')}}"><i class="fe fe-book-open"></i>
+                    <span class="sidemenu-label">Receive Cash</span>
+                </a>
+            </li>
+            <li class="nav-item {{Request::path() === 'admin/cashbook/creditNote' ? 'active show' : '' }}">
+                <a class="nav-link" href="{{route('admin.cashbook.creditNote')}}"><i class="fe fe-file-text"></i>
+                    <span class="sidemenu-label">Credit Note</span>
+                </a>
+            </li>
+            <li class="nav-item {{Request::path() === 'admin/cashbook/expense' ? 'active show' : '' }}">
+                <a class="nav-link" href="{{route('admin.cashbook.expense')}}"><i class="fe fe-file-text"></i>
+                    <span class="sidemenu-label">Expense</span>
+                </a>
+            </li>
+
+
             <li class="nav-label">Reports</li>
             <li class="nav-item {{ Request::path() === 'admin/reports/customer-report' ? 'active show' : '' }}">
                 <a class="nav-link" href="{{ route('customer-report.index') }}"><i class="fe fe-clipboard"></i><span
